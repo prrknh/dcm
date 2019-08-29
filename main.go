@@ -1,18 +1,15 @@
 package main
 
 import (
-	"github.com/prrknh/mikasa_container_api/handler"
-	"github.com/prrknh/mikasa_container_api/logger"
+	"github.com/prrknh/dcm/handler"
 	"net/http"
 )
 
 func main() {
-	logs := make(chan string)
-	logger := logger.LoggerMan{LogChan: logs}
-	go logger.Log(logs)
 
-	http.HandleFunc("/create", handler.CreateContainer(logger))
+	// check docker daemon is running
+	// check argument image name exists
+
+	http.HandleFunc("/create", handler.CreateContainer())
 	http.ListenAndServe(":5000", nil)
-
 }
-

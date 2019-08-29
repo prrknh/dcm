@@ -8,17 +8,19 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
-	"github.com/prrknh/mikasa_container_api/logger"
+	"github.com/phayes/freeport"
+	"github.com/prrknh/dcm/db"
+	"github.com/prrknh/dcm/logger"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
-
-func CreateContainer(logger logger.LoggerMan) func(w http.ResponseWriter, r *http.Request) {
+func CreateContainer() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cli, err := client.NewClientWithOpts(client.FromEnv)
 		if err != nil {
@@ -43,6 +45,12 @@ func CreateContainer(logger logger.LoggerMan) func(w http.ResponseWriter, r *htt
 			mnt = append(mnt, hoge)
 		}
 
+		port, err := freeport.GetFreePort()
+		if err != nil {
+			log.Fatal(err)
+		}
+		strPort := strconv.Itoa(port)
+
 		container, er := cli.ContainerCreate(context.Background(),
 			&container.Config{Image: "mikasa_unittest"},
 			&container.HostConfig{
@@ -51,12 +59,12 @@ func CreateContainer(logger logger.LoggerMan) func(w http.ResponseWriter, r *htt
 					"3306/tcp": []nat.PortBinding{
 						{
 							HostIP:   "",
-							HostPort: ""},
+							HostPort: strPort},
 					},
 				},
 			},
 			nil,
-			"mikasa_unittest"+time.Now().Format("20060102150405"))
+			"mikasa_unittest_"+time.Now().Format("20060102150405"))
 
 		if er != nil {
 			panic(er)
@@ -64,13 +72,16 @@ func CreateContainer(logger logger.LoggerMan) func(w http.ResponseWriter, r *htt
 		cli.ContainerStart(context.Background(), container.ID, types.ContainerStartOptions{})
 
 		go func() {
-			containerLog(container.ID, logger)
+			containerLog(container.ID)
 		}()
+
+		db.WaitInitialization(strPort)
+
 		io.WriteString(w, container.ID)
 	}
 }
 
-func containerLog(containerId string, man logger.LoggerMan) int {
+func containerLog(containerId string) int {
 	c, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return 1
@@ -85,13 +96,13 @@ func containerLog(containerId string, man logger.LoggerMan) int {
 		return 1
 	}
 
-	_, err = stdcopy.StdCopy(man, man, r)
+	cl := logger.NewContainerLogger(containerId)
+
+	_, err = stdcopy.StdCopy(cl, cl, r)
 	if err != nil {
 		log.Println(err)
 		return 1
 	}
 
 	return 0
-
 }
-
