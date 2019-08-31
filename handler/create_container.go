@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-func CreateContainer() func(w http.ResponseWriter, r *http.Request) {
+func CreateContainer(image string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cli, err := client.NewClientWithOpts(client.FromEnv)
 		if err != nil {
@@ -45,7 +45,6 @@ func CreateContainer() func(w http.ResponseWriter, r *http.Request) {
 
 			f.WriteString(r.URL.Query().Get("initsql"))
 
-
 			mnt = []mount.Mount{
 				{
 					Type:   mount.TypeBind,
@@ -62,7 +61,7 @@ func CreateContainer() func(w http.ResponseWriter, r *http.Request) {
 		strPort := strconv.Itoa(port)
 
 		container, er := cli.ContainerCreate(context.Background(),
-			&container.Config{Image: "mikasa_unittest"},
+			&container.Config{Image: image},
 			&container.HostConfig{
 				Mounts: mnt,
 				PortBindings: nat.PortMap{
@@ -74,7 +73,7 @@ func CreateContainer() func(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 			nil,
-			"mikasa_unittest_"+time.Now().Format("20060102150405"))
+			image+time.Now().Format("20060102150405"))
 
 		if er != nil {
 			panic(er)
