@@ -16,13 +16,13 @@ func WaitInitialization(port string) {
 
 	var retryCnt int
 
+	time.Sleep(4 * time.Second)
 	for {
 		var initialized int
 		if err := db.QueryRow("SELECT GET_LOCK('initialize', -1) AS initialized").Scan(&initialized); err != nil {
 			if retryCnt > 5 {
 				panic(err.Error())
 			}
-			time.Sleep(1 * time.Second)
 		}
 
 		if initialized == 1 {
@@ -32,6 +32,6 @@ func WaitInitialization(port string) {
 			panic("can not get lock.")
 		}
 		retryCnt++
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
