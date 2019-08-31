@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -11,7 +12,6 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/prrknh/dcm/db"
 	"github.com/prrknh/dcm/logger"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -30,17 +30,18 @@ func CreateContainer(image string) func(w http.ResponseWriter, r *http.Request) 
 			if err != nil {
 				log.Fatal(err)
 			}
-			defer os.Remove(tmpDir)
-
 			f, err := os.Create(tmpDir + "/runtime.sql")
 			if err != nil {
 				log.Fatal(err)
 			}
-			defer f.Close()
-
 			if _, err := f.WriteString(r.URL.Query().Get("initsql")); err != nil {
 				log.Fatal(err)
 			}
+			defer func() {
+				if err := os.RemoveAll(tmpDir); err != nil {
+					log.Fatalf(err.Error())
+				}
+			}()
 
 			mnt = []mount.Mount{
 				{
@@ -62,7 +63,7 @@ func CreateContainer(image string) func(w http.ResponseWriter, r *http.Request) 
 			panic(err)
 		}
 
-		container, er := cli.ContainerCreate(context.Background(),
+		con, er := cli.ContainerCreate(context.Background(),
 			&container.Config{Image: image},
 			&container.HostConfig{
 				Mounts: mnt,
@@ -80,15 +81,19 @@ func CreateContainer(image string) func(w http.ResponseWriter, r *http.Request) 
 		if er != nil {
 			panic(er)
 		}
-		cli.ContainerStart(context.Background(), container.ID, types.ContainerStartOptions{})
+		if err := cli.ContainerStart(context.Background(), con.ID, types.ContainerStartOptions{}); err != nil {
+			fmt.Println(w, err.Error())
+		}
 
 		go func() {
-			containerLog(container.ID)
+			containerLog(con.ID)
 		}()
 
 		db.WaitInitialization(strPort)
 
-		io.WriteString(w, "{\"containerId\": \""+container.ID+"\", \"port\": "+strPort+"}")
+		if _, err := fmt.Fprintf(w, "{\"containerId\": \"%s\", \"port\": %s}", con.ID, strPort); err != nil {
+			fmt.Println(err.Error())
+		}
 	}
 }
 

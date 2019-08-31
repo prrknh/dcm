@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/prrknh/dcm/handler"
 	"net/http"
+	"strings"
 
 	"log"
 )
@@ -41,7 +42,7 @@ func initialize() (image string) {
 	}
 	for _, img := range list {
 		for _, name := range img.RepoTags {
-			if name == image+":latest" {
+			if strings.HasPrefix(name, image) {
 				return image
 			}
 		}

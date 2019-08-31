@@ -29,7 +29,7 @@ func (cl ContainerLogger) Write(data []byte) (n int, err error) {
 
 func (cl ContainerLogger) colorLog(item string, num int) {
 	index := num % 6
-	item = "[" + cl.ContainerId + "] " + item
+	item = "[" + cl.ContainerId[0:12] + "] " + item
 	switch index {
 	case 0:
 		color.Red(item)

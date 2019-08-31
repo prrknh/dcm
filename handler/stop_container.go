@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"io"
+	"log"
 	"net/http"
 )
 
@@ -13,7 +13,7 @@ func StopContainer() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		containerId := r.URL.Query().Get("containerId")
 		if len(containerId) == 0 {
-			io.WriteString(w, "container id must be set")
+			fmt.Println(w, "container id must be set")
 		}
 		cli, err := client.NewClientWithOpts(client.FromEnv)
 		if err != nil {
@@ -28,8 +28,11 @@ func StopContainer() func(w http.ResponseWriter, r *http.Request) {
 			if err := cli.ContainerRemove(context.Background(), containerId, types.ContainerRemoveOptions{}); err != nil {
 				fmt.Println(err.Error())
 			}
+			fmt.Printf("completed stopping & removing container: %s", containerId)
 		}()
 
-		io.WriteString(w, "ok")
+		if _, err := fmt.Fprint(w, "ok"); err != nil {
+			log.Fatal(err.Error())
+		}
 	}
 }
