@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"io"
@@ -19,15 +20,15 @@ func StopContainer() func(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		if err := cli.ContainerStop(context.Background(), containerId, nil); err != nil {
-			io.WriteString(w, "ng")
-			return
-		}
-
-		if err := cli.ContainerRemove(context.Background(), containerId, types.ContainerRemoveOptions{}); err != nil {
-			io.WriteString(w, "ng")
-			return
-		}
+		go func() {
+			if err := cli.ContainerStop(context.Background(), containerId, nil); err != nil {
+				fmt.Println(err.Error())
+				return
+			}
+			if err := cli.ContainerRemove(context.Background(), containerId, types.ContainerRemoveOptions{}); err != nil {
+				fmt.Println(err.Error())
+			}
+		}()
 
 		io.WriteString(w, "ok")
 	}

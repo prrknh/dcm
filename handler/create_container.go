@@ -38,7 +38,9 @@ func CreateContainer(image string) func(w http.ResponseWriter, r *http.Request) 
 			}
 			defer f.Close()
 
-			f.WriteString(r.URL.Query().Get("initsql"))
+			if _, err := f.WriteString(r.URL.Query().Get("initsql")); err != nil {
+				log.Fatal(err)
+			}
 
 			mnt = []mount.Mount{
 				{
