@@ -86,7 +86,7 @@ func CreateContainer(image string) func(w http.ResponseWriter, r *http.Request) 
 
 		db.WaitInitialization(strPort)
 
-		io.WriteString(w, container.ID)
+		io.WriteString(w, "{\"containerId\": \"" + container.ID + "\", \"port\": " +strPort+"}")
 	}
 }
 
