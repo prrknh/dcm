@@ -15,12 +15,16 @@ func main() {
 
 	image := initialize()
 
-	http.HandleFunc("/create", handler.CreateContainer(image))
-	http.HandleFunc("/stop", handler.StopContainer())
 	log.Println("============================================")
 	log.Println("============= start server =================")
 	log.Println("============================================")
-	http.ListenAndServe(":5000", logRequest(http.DefaultServeMux))
+
+	http.HandleFunc("/create", handler.CreateContainer(image))
+	http.HandleFunc("/stop", handler.StopContainer())
+
+	if err := http.ListenAndServe(":5000", logRequest(http.DefaultServeMux)); err != nil {
+		log.Fatalf(err.Error())
+	}
 }
 
 func initialize() (image string) {
