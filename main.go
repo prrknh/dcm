@@ -16,6 +16,7 @@ func main() {
 	image := initialize()
 
 	http.HandleFunc("/create", handler.CreateContainer(image))
+	http.HandleFunc("/stop", handler.StopContainer())
 	http.ListenAndServe(":5000", nil)
 }
 

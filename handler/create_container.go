@@ -22,11 +22,6 @@ import (
 
 func CreateContainer(image string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cli, err := client.NewClientWithOpts(client.FromEnv)
-		if err != nil {
-			panic(err)
-		}
-
 		var mnt []mount.Mount
 
 		if len(r.URL.Query().Get("initsql")) > 0 {
@@ -60,6 +55,11 @@ func CreateContainer(image string) func(w http.ResponseWriter, r *http.Request) 
 		}
 		strPort := strconv.Itoa(port)
 
+		cli, err := client.NewClientWithOpts(client.FromEnv)
+		if err != nil {
+			panic(err)
+		}
+
 		container, er := cli.ContainerCreate(context.Background(),
 			&container.Config{Image: image},
 			&container.HostConfig{
@@ -86,7 +86,7 @@ func CreateContainer(image string) func(w http.ResponseWriter, r *http.Request) 
 
 		db.WaitInitialization(strPort)
 
-		io.WriteString(w, "{\"containerId\": \"" + container.ID + "\", \"port\": " +strPort+"}")
+		io.WriteString(w, "{\"containerId\": \""+container.ID+"\", \"port\": "+strPort+"}")
 	}
 }
 
