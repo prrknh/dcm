@@ -31,18 +31,28 @@ func CreateContainer() func(w http.ResponseWriter, r *http.Request) {
 
 		if len(r.URL.Query().Get("initsql")) > 0 {
 
-			tmpDir, errr := ioutil.TempDir("", "mikasa_unittest")
-			if errr != nil {
+			tmpDir, err := ioutil.TempDir("/tmp", "")
+			if err != nil {
 				log.Fatal(err)
 			}
 			defer os.Remove(tmpDir)
 
-			fp, _ := ioutil.TempFile(tmpDir, "xxx")
-			defer fp.Close()
+			f, err := os.Create(tmpDir + "/runtime.sql")
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer f.Close()
 
-			hoge := mount.Mount{Type: mount.TypeVolume, Source: tmpDir, Target: "/root/runtime.sql"}
+			f.WriteString(r.URL.Query().Get("initsql"))
 
-			mnt = append(mnt, hoge)
+
+			mnt = []mount.Mount{
+				{
+					Type:   mount.TypeBind,
+					Source: tmpDir,
+					Target: "/root/mount",
+				},
+			}
 		}
 
 		port, err := freeport.GetFreePort()
