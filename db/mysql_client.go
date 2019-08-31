@@ -28,6 +28,10 @@ func WaitInitialization(port string) {
 		if initialized == 1 {
 			break
 		}
+		if retryCnt > 10 {
+			panic("can not get lock.")
+		}
+		retryCnt++
 		time.Sleep(2 * time.Second)
 	}
 }
