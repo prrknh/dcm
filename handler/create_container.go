@@ -22,9 +22,16 @@ import (
 
 func CreateContainer(image string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			fmt.Println(w, "the request method is not supported")
+			return
+		}
+
 		var mnt []mount.Mount
 
-		if len(r.URL.Query().Get("initsql")) > 0 {
+		initsql := r.PostFormValue("initsql")
+
+		if len(initsql) > 0 {
 
 			tmpDir, err := ioutil.TempDir("/tmp", "")
 			if err != nil {
@@ -34,7 +41,7 @@ func CreateContainer(image string) func(w http.ResponseWriter, r *http.Request) 
 			if err != nil {
 				log.Fatal(err)
 			}
-			if _, err := f.WriteString(r.URL.Query().Get("initsql")); err != nil {
+			if _, err := f.WriteString(initsql); err != nil {
 				log.Fatal(err)
 			}
 			defer func() {
